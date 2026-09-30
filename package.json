@@ -1,7 +1,7 @@
 {
   "name": "memory-game",
   "version": "1.0.0",
-  "description": "Игра «Найди пары» на чистом JavaScript: разметка создаётся через document.createElement",
+  "description": "mind-game",
   "type": "module",
   "private": true,
   "scripts": {

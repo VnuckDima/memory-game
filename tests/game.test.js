@@ -1,11 +1,13 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
+import { BACK_IMAGE_SRC, CARD_IMAGES } from '../src/images.js';
 
 const indexHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const MISMATCH_WAIT_MS = 1100;
 const WIN_MODAL_WAIT_MS = 700;
+const STORAGE_KEY = 'memory-game:results:v1';
 
 let appCount = 0;
 
@@ -36,6 +38,21 @@ function imageNameOf(cardElement) {
 
 function clickCard(document, cardElement) {
   cardElement.click();
+}
+
+function getHeaderButtons(document) {
+  return [...document.querySelectorAll('.header__actions .button')];
+}
+
+function pressKey(document, key) {
+  document.dispatchEvent(new document.defaultView.KeyboardEvent('keydown', { key, bubbles: true }));
+}
+
+/** Закрыть открытое окно, чтобы состояние модалок не протекало между тестами. */
+function closeModal(document) {
+  if (document.querySelector('.modal')) {
+    pressKey(document, 'Escape');
+  }
 }
 
 function findPairIndices(document) {
@@ -130,12 +147,12 @@ test('после победы открывается модальное окно
   assert.match(modal.textContent, /Победа/);
   assert.match(modal.textContent, /8 ходов/);
 
-  const saved = JSON.parse(document.defaultView.localStorage.getItem('memory-game:results:v1'));
+  const saved = JSON.parse(document.defaultView.localStorage.getItem(STORAGE_KEY));
   assert.equal(saved.length, 1);
   assert.equal(saved[0].moves, 8);
 
   // Закрытие по Escape не сбрасывает игру.
-  document.dispatchEvent(new document.defaultView.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  pressKey(document, 'Escape');
   assert.equal(document.querySelector('.modal'), null);
   assert.equal(document.querySelectorAll('.stat__value')[1].textContent, '8 из 8');
 
@@ -149,7 +166,7 @@ test('таблица лидеров сортируется и не сбрасы�
   const store = document.defaultView.localStorage;
 
   store.setItem(
-    'memory-game:results:v1',
+    STORAGE_KEY,
     JSON.stringify([
       { moves: 12, finishedAt: '2026-01-05T10:00:00.000Z' },
       { moves: 9, finishedAt: '2026-01-05T11:00:00.000Z' },
@@ -160,7 +177,7 @@ test('таблица лидеров сортируется и не сбрасы�
   const cards = getCards(document);
   clickCard(document, cards[0]);
 
-  document.querySelectorAll('.header__actions .button')[1].click();
+  getHeaderButtons(document)[1].click();
   const rows = [...document.querySelectorAll('.leaderboard tbody tr')].map((row) =>
     [...row.querySelectorAll('td')].map((cell) => cell.textContent),
   );
@@ -176,7 +193,6 @@ test('таблица лидеров сортируется и не сбрасы�
   assert.ok(cards[0].classList.contains('is-open'), 'открытая карточка осталась открытой');
   assert.equal(document.querySelectorAll('.stat__value')[0].textContent, '0');
 });
-
 test('«Новая игра» сбрасывает поле и отменяет таймер несовпавшей пары', async () => {
   const document = await mountApp();
   const cards = getCards(document);
@@ -185,7 +201,7 @@ test('«Новая игра» сбрасывает поле и отменяет 
   clickCard(document, cards[1]);
   assert.equal(document.querySelectorAll('.stat__value')[0].textContent, '1');
 
-  document.querySelectorAll('.header__actions .button')[0].click();
+  getHeaderButtons(document)[0].click();
 
   assert.equal(document.querySelectorAll('.stat__value')[0].textContent, '0');
   assert.equal(document.querySelectorAll('.stat__value')[1].textContent, '0 из 8');
@@ -200,7 +216,100 @@ test('«Новая игра» сбрасывает поле и отменяет 
 test('пустая таблица лидеров показывает сообщение', async () => {
   const document = await mountApp();
 
-  document.querySelectorAll('.header__actions .button')[1].click();
+  getHeaderButtons(document)[1].click();
 
   assert.match(document.querySelector('.modal').textContent, /Пока нет результатов/);
+
+  closeModal(document);
+});
+
+test('окно закрывается кликом по фону, но не кликом по своему содержимому', async () => {
+  const document = await mountApp();
+
+  getHeaderButtons(document)[1].click();
+  const overlay = document.querySelector('.modal');
+
+  assert.equal(document.body.classList.contains('is-modal-open'), true, 'прокрутка заблокирована');
+  assert.equal(overlay.contains(document.activeElement), true, 'фокус внутри окна');
+
+  overlay.querySelector('.modal__dialog').click();
+  assert.ok(document.querySelector('.modal'), 'клик по содержимому не закрывает окно');
+
+  overlay.click();
+  assert.equal(document.querySelector('.modal'), null);
+  assert.equal(document.body.classList.contains('is-modal-open'), false, 'прокрутка восстановлена');
+});
+
+test('изолированность состояния: окно из прошлого теста не влияет на новое', async () => {
+  const first = await mountApp();
+  getHeaderButtons(first)[1].click();
+  closeModal(first);
+
+  const second = await mountApp();
+  assert.equal(second.querySelector('.modal'), null);
+  assert.equal(second.body.classList.contains('is-modal-open'), false);
+});
+
+test('в таблице лидеров остаются только десять лучших результатов', async () => {
+  const document = await mountApp();
+  const results = Array.from({ length: 12 }, (_, index) => ({
+    moves: 20 - index,
+    finishedAt: new Date(Date.UTC(2026, 0, index + 1)).toISOString(),
+  }));
+  document.defaultView.localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
+
+  getHeaderButtons(document)[1].click();
+  const rows = [...document.querySelectorAll('.leaderboard tbody tr')];
+
+  assert.equal(rows.length, 10);
+  assert.equal(rows[0].querySelector('.leaderboard__place').textContent, '1');
+  assert.match(rows[0].textContent, /9 ходов/);
+
+  closeModal(document);
+});
+
+test('открытие и закрытие окон победы не создаёт повторных записей', async () => {
+  const document = await mountApp();
+  const cards = getCards(document);
+
+  findPairIndices(document).forEach(([firstIndex, secondIndex]) => {
+    clickCard(document, cards[firstIndex]);
+    clickCard(document, cards[secondIndex]);
+  });
+  await sleep(WIN_MODAL_WAIT_MS);
+
+  pressKey(document, 'Escape');
+  getHeaderButtons(document)[1].click();
+  pressKey(document, 'Escape');
+
+  const saved = JSON.parse(document.defaultView.localStorage.getItem(STORAGE_KEY));
+  assert.equal(saved.length, 1);
+});
+
+test('несовпавшая пара закрывается по своему таймеру при открытой таблице лидеров', async () => {
+  const document = await mountApp();
+  const cards = getCards(document);
+
+  clickCard(document, cards[0]);
+  clickCard(document, cards[1]);
+
+  getHeaderButtons(document)[1].click();
+  pressKey(document, 'Escape');
+
+  assert.ok(cards[0].classList.contains('is-open'), 'пара ещё открыта сразу после закрытия окна');
+
+  await sleep(MISMATCH_WAIT_MS);
+  assert.ok(!cards[0].classList.contains('is-open'));
+  assert.ok(!cards[1].classList.contains('is-open'));
+});
+
+test('изображения карточек — корректный SVG', () => {
+  const ParserCtor = new JSDOM('').window.DOMParser;
+  const sources = [...CARD_IMAGES.map((image) => image.src), BACK_IMAGE_SRC];
+
+  sources.forEach((source) => {
+    const svg = decodeURIComponent(source.split(',').slice(1).join(','));
+    const doc = new ParserCtor().parseFromString(svg, 'image/svg+xml');
+    assert.equal(doc.querySelector('parsererror'), null, 'SVG разбирается без ошибок');
+  });
 });

@@ -42,7 +42,7 @@ export function saveResult(moves) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(top));
   } catch {
-    /* хранилище недоступно — результат просто не сохранится */
+    return { top, place };
   }
 
   return { top, place };

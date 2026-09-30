@@ -8,18 +8,11 @@ function syncScrollLock() {
 }
 
 function getFocusable(dialog) {
-  // offsetParent === null только у скрытых элементов, поэтому такой признак
-  // подходит для поиска доступных кнопок внутри открытого окна.
   return [...dialog.querySelectorAll(FOCUSABLE_SELECTOR)].filter(
     (node) => !node.disabled && node.offsetParent !== null,
   );
 }
 
-/**
- * Общий компонент модальных окон: оболочка, затемнение, блокировка прокрутки,
- * закрытие по кнопке, клику по фону и клавише Escape.
- * Содержимое и набор кнопок передаются отдельно для каждого окна.
- */
 export function openModal({ title, subtitle, body = [], actions = [] }) {
   const previouslyFocused = document.activeElement;
   const titleId = `modal-title-${openModals.length}-${Date.now()}`;

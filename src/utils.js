@@ -1,4 +1,3 @@
-/** Перемешивание массива алгоритмом Фишера — Йетса. */
 export function shuffle(items) {
   const result = [...items];
   for (let i = result.length - 1; i > 0; i -= 1) {
@@ -8,7 +7,6 @@ export function shuffle(items) {
   return result;
 }
 
-/** Склонение существительного: pluralize(5, 'ход', 'хода', 'ходов') → 'ходов'. */
 export function pluralize(count, one, few, many) {
   const abs = Math.abs(count) % 100;
   const last = abs % 10;

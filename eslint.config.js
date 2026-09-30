@@ -26,7 +26,6 @@ export default [
       'no-var': 'error',
       'prefer-const': 'error',
 
-      // Запреты из задания: разметка создаётся только через document.createElement.
       'no-restricted-properties': [
         'error',
         { property: 'innerHTML', message: 'Присваивание innerHTML запрещено заданием.' },

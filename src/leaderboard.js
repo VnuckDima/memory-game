@@ -24,7 +24,6 @@ function createResultsTable(results) {
   ]);
 }
 
-/** Модальное окно таблицы лидеров с десятью лучшими результатами. */
 export function openLeaderboardModal() {
   const results = getTopResults();
 

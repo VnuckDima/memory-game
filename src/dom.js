@@ -1,7 +1,3 @@
-/**
- * Обёртка над document.createElement.
- * Позволяет описывать элементы декларативно, не используя строковую разметку.
- */
 export function el(tag, options = {}, children = []) {
   const { className, text, attrs, props, dataset, on } = options;
   const node = document.createElement(tag);

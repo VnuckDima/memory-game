@@ -4,9 +4,7 @@ import { openModal } from './modal.js';
 import { saveResult } from './storage.js';
 import { pluralize, shuffle } from './utils.js';
 
-/** Задержка закрытия несовпавшей пары (в диапазоне 700–1500 мс). */
 export const MISMATCH_DELAY_MS = 1000;
-/** Небольшая пауза, чтобы игрок увидел последнюю найденную пару. */
 const WIN_MODAL_DELAY_MS = 550;
 
 export class MemoryGame {
@@ -24,7 +22,6 @@ export class MemoryGame {
     this.timerId = null;
   }
 
-  /** Начать новую игру: перемешать карточки, закрыть их и обнулить счётчики. */
   newGame() {
     this.clearTimer();
     this.cards = this.createDeck();

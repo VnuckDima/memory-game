@@ -48,7 +48,6 @@ function pressKey(document, key) {
   document.dispatchEvent(new document.defaultView.KeyboardEvent('keydown', { key, bubbles: true }));
 }
 
-/** Закрыть открытое окно, чтобы состояние модалок не протекало между тестами. */
 function closeModal(document) {
   if (document.querySelector('.modal')) {
     pressKey(document, 'Escape');
@@ -104,7 +103,6 @@ test('несовпавшая пара закрывается через 700–15
   assert.equal(document.querySelectorAll('.stat__value')[0].textContent, '1');
   assert.ok(partner.classList.contains('is-open'));
 
-  // Во время блокировки другие карточки выбрать нельзя.
   clickCard(document, cards[3]);
   assert.ok(!cards[3].classList.contains('is-open'));
 
@@ -151,12 +149,10 @@ test('после победы открывается модальное окно
   assert.equal(saved.length, 1);
   assert.equal(saved[0].moves, 8);
 
-  // Закрытие по Escape не сбрасывает игру.
   pressKey(document, 'Escape');
   assert.equal(document.querySelector('.modal'), null);
   assert.equal(document.querySelectorAll('.stat__value')[1].textContent, '8 из 8');
 
-  // Клики по карточкам завершённой игры ничего не меняют.
   clickCard(document, cards[0]);
   assert.equal(document.querySelectorAll('.stat__value')[0].textContent, '8');
 });
@@ -207,7 +203,6 @@ test('«Новая игра» сбрасывает поле и отменяет 
   assert.equal(document.querySelectorAll('.stat__value')[1].textContent, '0 из 8');
   assert.ok(getCards(document).every((card) => !isOpen(card)));
 
-  // Старый таймер отменён: кликнуть карточку можно сразу.
   const newCards = getCards(document);
   clickCard(document, newCards[0]);
   assert.ok(newCards[0].classList.contains('is-open'));

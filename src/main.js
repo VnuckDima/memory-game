@@ -32,8 +32,16 @@ function buildApp() {
     className: 'board',
     attrs: { role: 'group', 'aria-label': 'Игровое поле с карточками' },
   });
-  const movesValue = el('span', { className: 'stat__value', text: '0' });
-  const pairsValue = el('span', { className: 'stat__value', text: '0 из 8' });
+  const movesValue = el('span', {
+    className: 'stat__value',
+    text: '0',
+    attrs: { 'aria-live': 'polite' },
+  });
+  const pairsValue = el('span', {
+    className: 'stat__value',
+    text: '0 из 8',
+    attrs: { 'aria-live': 'polite' },
+  });
 
   const game = new MemoryGame({
     boardEl: board,

@@ -8,6 +8,8 @@ function syncScrollLock() {
 }
 
 function getFocusable(dialog) {
+  // offsetParent === null только у скрытых элементов, поэтому такой признак
+  // подходит для поиска доступных кнопок внутри открытого окна.
   return [...dialog.querySelectorAll(FOCUSABLE_SELECTOR)].filter(
     (node) => !node.disabled && node.offsetParent !== null,
   );
